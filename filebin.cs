@@ -1,184 +1,206 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SeasideResearch.LibCurlNet;
 using System.Threading;
+using Jayrock;
+using Jayrock.Json;
 
-namespace libfbclient.net
+namespace libfbclientnet
 {
-    class UploadProgressEventArgs {
-        private double _UploadTotal;
-        public double UploadTotal
-        {
-            get { return _UploadTotal; } 
-            set { _UploadTotal = value; }
-        }
+	public class UploadProgressEventArgs {
+		private double _UploadTotal;
+		public double UploadTotal
+		{
+			get { return _UploadTotal; } 
+			set { _UploadTotal = value; }
+		}
 
-        private double _UploadCurrent;
-        public double UploadCurrent
-        {
-            get { return _UploadCurrent; }
-            set { _UploadCurrent = value; }
-        }
-    }
+		private double _UploadCurrent;
+		public double UploadCurrent
+		{
+			get { return _UploadCurrent; }
+			set { _UploadCurrent = value; }
+		}
+	}
 
-    class filebin {
-        public delegate void UploadProgressEventHandler(object sender, UploadProgressEventArgs e);
+	public class UploadFinishedEventArgs {
+		private string _URL;
+		public string URL {
+			get { return _URL; }
+		}
 
-        public event UploadProgressEventHandler UploadProgress;
+		public UploadFinishedEventArgs(string url) {
+			_URL = url;
+		}
+	}
 
-        private string _host;
-        private string _useragent;
+	public class filebin {
+		public delegate void UploadProgressEventHandler (object sender, UploadProgressEventArgs e);
 
-        public filebin(string host, string useragent)
-        {
-            _host = host;
-            _useragent = useragent;
-        }
+		public delegate void UploadFinishedEventHandler (object sender, UploadFinishedEventArgs e);
 
-        public string Host
-        {
-            get { return _host; }
-        }
+		public event UploadProgressEventHandler UploadProgress;
+		public event UploadFinishedEventHandler UploadFinished;
 
-        public string Useragent
-        {
-            get { return _useragent; }
-            set { _useragent = value;  }
-        }
+		private string _host;
+		private string _useragent;
 
-        public void UploadFile(object obj)
-        {
-            this.UploadFile(Convert.ToString(obj));
-        }
+		private string _CompleteHistoryJSONOutput;
 
-        public void UploadFile(string filename)
-        {
-            //must happend first
-            Curl.GlobalInit((int)CURLinitFlag.CURL_GLOBAL_ALL);
+		public filebin(string host, string useragent)
+		{
+			_host = host;
+			_useragent = useragent;
+		}
 
-            Slist headerlist = new Slist();
-            Easy easy = new Easy();
-            MultiPartForm mf = new MultiPartForm();
+		public string Host
+		{
+			get { return _host; }
+		}
 
-            mf.AddSection(CURLformoption.CURLFORM_COPYNAME, "file", CURLformoption.CURLFORM_FILE, filename, CURLformoption.CURLFORM_END);
+		public string Useragent
+		{
+			get { return _useragent; }
+			set { _useragent = value;  }
+		}
 
-            easy.SetOpt(CURLoption.CURLOPT_DEBUGFUNCTION, new Easy.DebugFunction(OnDebug));
-            easy.SetOpt(CURLoption.CURLOPT_VERBOSE, true);
-            
-            easy.SetOpt(CURLoption.CURLOPT_PROGRESSFUNCTION, new Easy.ProgressFunction(OnProgress));
-            
-            easy.SetOpt(CURLoption.CURLOPT_URL, this.Host);
-            easy.SetOpt(CURLoption.CURLOPT_HTTPPOST, mf);
+		public void UploadFile(object obj)
+		{
+			this.UploadFile(Convert.ToString(obj));
+		}
 
-            headerlist.Append("Expect:");
+		public void UploadFile(string filename)
+		{
+			//must happend first
+			Curl.GlobalInit((int)CURLinitFlag.CURL_GLOBAL_ALL);
 
-            easy.SetOpt(CURLoption.CURLOPT_HTTPHEADER, headerlist);
-            easy.SetOpt(CURLoption.CURLOPT_NETRC, CURLnetrcOption.CURL_NETRC_REQUIRED);
+			Slist headerlist = new Slist();
+			Easy easy = new Easy();
+			MultiPartForm mf = new MultiPartForm();
 
-            easy.SetOpt(CURLoption.CURLOPT_USERAGENT, this.Useragent);
-            easy.SetOpt(CURLoption.CURLOPT_SSL_VERIFYPEER, false);
-            easy.SetOpt(CURLoption.CURLOPT_FOLLOWLOCATION, true);
+			mf.AddSection(CURLformoption.CURLFORM_COPYNAME, "file", CURLformoption.CURLFORM_FILE, filename, CURLformoption.CURLFORM_END);
 
-            easy.Perform();
-            easy.Cleanup();
+			easy.SetOpt(CURLoption.CURLOPT_DEBUGFUNCTION, new Easy.DebugFunction(OnDebug));
+			easy.SetOpt(CURLoption.CURLOPT_VERBOSE, true);
 
-            mf.Free();
-            Curl.GlobalCleanup();
-        }
+			easy.SetOpt(CURLoption.CURLOPT_PROGRESSFUNCTION, new Easy.ProgressFunction(OnProgress));
 
-        public void UploadFileAsync(string filename)
-        {
-            Thread pUploadThread = new System.Threading.Thread(new ParameterizedThreadStart(UploadFile));
-                        
-            pUploadThread.SetApartmentState(ApartmentState.STA);
-            pUploadThread.Start(filename);
-        }       
+			easy.SetOpt(CURLoption.CURLOPT_URL, this.Host);
+			easy.SetOpt(CURLoption.CURLOPT_HTTPPOST, mf);
 
-        public List<filebin_item> GetUploadHistory()
-        {
-            //must happend first
-            Curl.GlobalInit((int)CURLinitFlag.CURL_GLOBAL_ALL);
+			headerlist.Append("Expect:");
 
-            _CompleteHistoryJSONOutput = "";
+			easy.SetOpt(CURLoption.CURLOPT_HTTPHEADER, headerlist);
+			easy.SetOpt(CURLoption.CURLOPT_NETRC, CURLnetrcOption.CURL_NETRC_REQUIRED);
 
-            Easy easy = new Easy();
-            Slist headerlist = new Slist();
-            Easy.WriteFunction wf = default(Easy.WriteFunction);
+			easy.SetOpt(CURLoption.CURLOPT_USERAGENT, this.Useragent);
+			easy.SetOpt(CURLoption.CURLOPT_SSL_VERIFYPEER, false);
+			easy.SetOpt(CURLoption.CURLOPT_FOLLOWLOCATION, true);
 
-            wf = new Easy.WriteFunction(OnWriteData);
+			easy.Perform();
+			easy.Cleanup();
 
-            
-            easy.SetOpt(CURLoption.CURLOPT_URL, this.Host + "/file/upload_history?json");
+			mf.Free();
+			Curl.GlobalCleanup();
+		}
 
-            headerlist.Append("Expect:");
+		public void UploadFileAsync(string filename)
+		{
+			Thread pUploadThread = new System.Threading.Thread(new ParameterizedThreadStart(UploadFile));
 
-            easy.SetOpt(CURLoption.CURLOPT_HTTPHEADER, headerlist);
-            easy.SetOpt(CURLoption.CURLOPT_NETRC, CURLnetrcOption.CURL_NETRC_REQUIRED);
+			pUploadThread.SetApartmentState(ApartmentState.STA);
+			pUploadThread.Start(filename);
+		}       
 
-            easy.SetOpt(CURLoption.CURLOPT_BUFFERSIZE, 8 * 8192);
-            easy.SetOpt(CURLoption.CURLOPT_WRITEFUNCTION, wf);
+		public List<filebin_item> GetUploadHistory()
+		{
+			List<filebin_item> historyItems;
+			//must happend first
+			Curl.GlobalInit((int)CURLinitFlag.CURL_GLOBAL_ALL);
 
-            easy.SetOpt(CURLoption.CURLOPT_USERAGENT, this.Useragent);
-            easy.SetOpt(CURLoption.CURLOPT_SSL_VERIFYPEER, false);
-            easy.SetOpt(CURLoption.CURLOPT_FOLLOWLOCATION, true);
+			_CompleteHistoryJSONOutput = "";
 
-            easy.Perform();
-            easy.Cleanup();
+			Easy easy = new Easy();
+			Slist headerlist = new Slist();
+			Easy.WriteFunction wf = default(Easy.WriteFunction);
 
-            Curl.GlobalCleanup();
+			wf = new Easy.WriteFunction(OnWriteData);
+
+			easy.SetOpt(CURLoption.CURLOPT_URL, this.Host + "/file/upload_history?json");
+
+			headerlist.Append("Expect:");
+
+			easy.SetOpt(CURLoption.CURLOPT_HTTPHEADER, headerlist);
+			easy.SetOpt(CURLoption.CURLOPT_NETRC, CURLnetrcOption.CURL_NETRC_REQUIRED);
+
+			easy.SetOpt(CURLoption.CURLOPT_BUFFERSIZE, 8 * 8192);
+			easy.SetOpt(CURLoption.CURLOPT_WRITEFUNCTION, wf);
+
+			easy.SetOpt(CURLoption.CURLOPT_USERAGENT, this.Useragent);
+			easy.SetOpt(CURLoption.CURLOPT_SSL_VERIFYPEER, false);
+			easy.SetOpt(CURLoption.CURLOPT_FOLLOWLOCATION, true);
+
+			easy.Perform();
+			easy.Cleanup();
+
+			Curl.GlobalCleanup();
 
 
-            if (_CompleteHistoryJSONOutput.Length > 0)
-            {
-                return new List<filebin_item>(Jayrock.Json.Conversion.JsonConvert.Import<filebin_item[]>(_CompleteHistoryJSONOutput));
-            }
-            else
-            {
-                return null;
-            }
-        }
-        
-        static string _CompleteHistoryJSONOutput;
-        private static Int32 OnWriteData(byte[] buf, Int32 size, Int32 nmemb, object extraData)
-        {
-            _CompleteHistoryJSONOutput += System.Text.Encoding.UTF8.GetString(buf);
-            return size * nmemb;
-        }
+			if (_CompleteHistoryJSONOutput.Length > 0)
+			{
+				historyItems = new List<filebin_item>(Jayrock.Json.Conversion.JsonConvert.Import<filebin_item[]>(_CompleteHistoryJSONOutput));
+				foreach (filebin_item historyItem in historyItems) {
+					historyItem.fb_host = this.Host;
+				}
+				return historyItems;
+			}
+			else
+			{
+				return null;
+			}
+		}
 
-        private void OnDebug(CURLINFOTYPE infoType, string msg, object extraData)
-        {
-            //only dump received data
-            if ((infoType == CURLINFOTYPE.CURLINFO_DATA_IN))
-            {
-                if (msg.StartsWith("http"))
-                    SetClipboardTextDispatcher(msg);
-                Log_WriteLine(msg);
-            }
-        }
+		private Int32 OnWriteData(byte[] buf, Int32 size, Int32 nmemb, object extraData)
+		{
+			_CompleteHistoryJSONOutput += System.Text.Encoding.UTF8.GetString(buf);
+			return size * nmemb;
+		}
 
-        private Int32 OnProgress(object extraData, double dlTotal, double dlNow, double ulTotal, double ulNow)
-        {
-            UploadProgressEventArgs e = new UploadProgressEventArgs();
+		private void OnDebug(CURLINFOTYPE infoType, string msg, object extraData)
+		{
+			//only dump received data
+			if ((infoType == CURLINFOTYPE.CURLINFO_DATA_IN))
+			{
+				OnUploadFinished(new UploadFinishedEventArgs(msg));                    
+			}
+		}
 
-            e.UploadTotal = ulTotal;
-            e.UploadCurrent = ulNow;
+		private Int32 OnProgress(object extraData, double dlTotal, double dlNow, double ulTotal, double ulNow)
+		{
+			UploadProgressEventArgs e = new UploadProgressEventArgs();
 
-            OnUploadProgress(e);
-            
-            return 0;
-        }
+			e.UploadTotal = ulTotal;
+			e.UploadCurrent = ulNow;
 
-        protected virtual void OnUploadProgress(UploadProgressEventArgs e)
-        {
-            if (UploadProgress != null)
-            {
-                UploadProgress(this, e);
-            }
-        }
+			OnUploadProgress(e);
 
-        
-    }
+			return 0;
+		}
+
+		protected virtual void OnUploadProgress(UploadProgressEventArgs e)
+		{
+			if (UploadProgress != null) {
+				UploadProgress(this, e);
+			}
+		}
+
+		protected virtual void OnUploadFinished(UploadFinishedEventArgs e) {
+			if (UploadFinished != null) {
+				UploadFinished (this, e);
+			}
+		}        
+	}
 
 }
