@@ -1,0 +1,15 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="filebin_item.cs">
+    <Files>
+      <File FileName="filebin.cs" Line="112" Column="4" />
+      <File FileName="testing/Program.cs" Line="28" Column="23" />
+      <File FileName="filebin_item.cs" Line="25" Column="25" />
+      <File FileName="global_functions.cs" Line="10" Column="57" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

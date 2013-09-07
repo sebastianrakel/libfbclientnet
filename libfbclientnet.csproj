@@ -37,9 +37,6 @@
     <Reference Include="Jayrock.Json">
       <HintPath>lib\Jayrock.Json.dll</HintPath>
     </Reference>
-    <Reference Include="LibCurlNet">
-      <HintPath>lib\LibCurlNet.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -49,11 +46,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="lib\ca-bundle.crt" />
     <None Include="lib\Jayrock.dll" />
     <None Include="lib\Jayrock.Json.dll" />
-    <None Include="lib\libcurl.dll" />
-    <None Include="lib\LibCurlNet.dll" />
-    <None Include="lib\LibCurlShim.dll" />
   </ItemGroup>
 </Project>
