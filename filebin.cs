@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using SeasideResearch.LibCurlNet;
 using System.Threading;
 using Jayrock;
 using Jayrock.Json;
@@ -69,7 +67,6 @@ namespace libfbclientnet
 
 	public class filebin {
 		public delegate void UploadProgressEventHandler (object sender, UploadProgressEventArgs e);
-
 		public delegate void UploadFinishedEventHandler (object sender, UploadFinishedEventArgs e);
 
 		public event UploadProgressEventHandler UploadProgress;
@@ -79,6 +76,11 @@ namespace libfbclientnet
 		private string _useragent;
 		private string _apikey;
 
+		private static bool AcceptAllCertifications(object sender, System.Security.Cryptography.X509Certificates.X509Certificate certification, System.Security.Cryptography.X509Certificates.X509Chain chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
+		{
+			return true;
+		}
+
 		public filebin(string host, string useragent)
 		{
 			if (!host.EndsWith ("/")) {
@@ -87,6 +89,8 @@ namespace libfbclientnet
 
 			_host = host;
 			_useragent = useragent;
+
+			ServicePointManager.ServerCertificateValidationCallback = new System.Net.Security.RemoteCertificateValidationCallback(AcceptAllCertifications);	
 		}
 
 		public string Host
