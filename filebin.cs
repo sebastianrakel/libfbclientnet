@@ -266,7 +266,7 @@ namespace libfbclientnet
 				httpWReq.Method = "POST";
 				httpWReq.ContentType = "multipart/form-data";
 				httpWReq.ContentLength = data.Length;
-				httpWReq.Expect = "100-continue";
+				//httpWReq.Expect = "100-continue";
 
 				using (Stream stream = httpWReq.GetRequestStream())
 				{
