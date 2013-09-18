@@ -257,30 +257,32 @@ namespace libfbclientnet
 			List<filebin_item> historyItems = null;
 
 			HttpWebRequest httpWReq = (HttpWebRequest)WebRequest.Create(this.Host + "file/upload_history?json");
-
+			HttpWebResponse response;
 			try {
 				ASCIIEncoding encoding = new ASCIIEncoding();
 				string postData = "apikey=" + this.APIKey;
 				byte[] data = encoding.GetBytes(postData);
 
 				httpWReq.Method = "POST";
-				httpWReq.ContentType = "multipart/form-data";
+				httpWReq.ContentType = "application/x-www-form-urlencoded";
 				httpWReq.ContentLength = data.Length;
-				//httpWReq.Expect = "100-continue";
+				httpWReq.UserAgent = this.Useragent;
 
 				using (Stream stream = httpWReq.GetRequestStream())
 				{
 					stream.Write(data,0,data.Length);
 				}
 
-				HttpWebResponse response = (HttpWebResponse)httpWReq.GetResponse();
+				response = (HttpWebResponse)httpWReq.GetResponse();
 
 				string responseString;
 				using (StreamReader sr = new StreamReader(response.GetResponseStream())) {
 					responseString = sr.ReadToEnd();
 				}
-				 
-				historyItems = new List<filebin_item>(Jayrock.Json.Conversion.JsonConvert.Import<filebin_item[]>(responseString));
+
+				JsonObject jsonDownloadResult = (JsonObject) JsonConvert.Import(responseString);
+
+				historyItems = new List<filebin_item>(Jayrock.Json.Conversion.JsonConvert.Import<filebin_item[]>(jsonDownloadResult["data"]));
 				foreach (filebin_item historyItem in historyItems) {
 					historyItem.fb_host = this.Host;
 				}
