@@ -232,7 +232,9 @@ namespace libfbclientnet
 					break;
 			}
 
-			UploadResult result = new UploadResult (jsonDownloadResult["data"].ToString(), status);
+            List<string> resultData = new List<string>(Jayrock.Json.Conversion.JsonConvert.Import<string[]>(Convert.ToString(jsonDownloadResult["data"])));
+
+			UploadResult result = new UploadResult (resultData[0], status);
 
 			return result;
 		}
@@ -281,8 +283,8 @@ namespace libfbclientnet
 				}
 
 				JsonObject jsonDownloadResult = (JsonObject) JsonConvert.Import(responseString);
-
-				historyItems = new List<filebin_item>(Jayrock.Json.Conversion.JsonConvert.Import<filebin_item[]>(jsonDownloadResult["data"]));
+                                
+                historyItems = new List<filebin_item>(Jayrock.Json.Conversion.JsonConvert.Import<filebin_item[]>(Convert.ToString(jsonDownloadResult["data"])));
 				foreach (filebin_item historyItem in historyItems) {
 					historyItem.fb_host = this.Host;
 				}
